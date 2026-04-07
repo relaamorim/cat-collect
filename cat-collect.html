@@ -354,20 +354,44 @@
       tamanhoProduto: 60,      // Tamanho dos produtos (emoji)
     };
 
-    // Produtos Yoki que caem na tela (emoji + nome + pontos)
+    // Produtos Yoki que caem na tela (imagem + nome + pontos)
     const PRODUTOS = [
-      { emoji: '🍿', nome: 'Pipoca', pontos: 1 },
-      { emoji: '🌽', nome: 'Milho', pontos: 1 },
-      { emoji: '🥜', nome: 'Amendoim', pontos: 2 },
-      { emoji: '🍜', nome: 'Macarrão', pontos: 1 },
-      { emoji: '🫘', nome: 'Feijão', pontos: 2 },
-      { emoji: '🧂', nome: 'Tempero', pontos: 3 },
-      { emoji: '🥣', nome: 'Sopa', pontos: 2 },
-      { emoji: '🫓', nome: 'Farofa', pontos: 3 },
+      { img: 'pipoca-manteiga.png', nome: 'Pipoca Manteiga', pontos: 1 },
+      { img: 'farofa-tradicional.png', nome: 'Farofa Tradicional', pontos: 2 },
+      { img: 'milho-pipoca.png', nome: 'Milho Pipoca', pontos: 1 },
     ];
 
-    // Item ruim que tira pontos (bomba)
-    const ITEM_RUIM = { emoji: '💣', nome: 'Bomba', pontos: -3 };
+    // Item ruim que tira pontos (bomba roxa, desenhada no canvas)
+    const ITEM_RUIM = { img: null, nome: 'Bomba', pontos: -3 };
+
+    // ============================================
+    // PRÉ-CARREGAMENTO DAS IMAGENS
+    // ============================================
+    const imagensCarregadas = {};
+    let imagensProntas = false;
+
+    function carregarImagens() {
+      let total = PRODUTOS.length;
+      let carregadas = 0;
+
+      PRODUTOS.forEach(p => {
+        const img = new Image();
+        img.onload = () => {
+          carregadas++;
+          if (carregadas >= total) imagensProntas = true;
+        };
+        img.onerror = () => {
+          // Se a imagem não carregar, usa fallback de texto
+          carregadas++;
+          if (carregadas >= total) imagensProntas = true;
+        };
+        img.src = p.img;
+        imagensCarregadas[p.img] = img;
+      });
+    }
+
+    // Inicia o carregamento assim que a página abre
+    carregarImagens();
 
     // ============================================
     // ELEMENTOS DO DOM
@@ -700,8 +724,8 @@
             criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#ffdd00');
             criarTextoFlutuante(p.x, p.y, `+${p.pontos}`, '#ffdd00');
           } else {
-            criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#ff4444');
-            criarTextoFlutuante(p.x, p.y, `${p.pontos}`, '#ff4444');
+            criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#c77dff');
+            criarTextoFlutuante(p.x, p.y, `${p.pontos}`, '#c77dff');
           }
 
           gameState.produtos.splice(i, 1);
@@ -714,40 +738,93 @@
           continue;
         }
 
-        // Desenha o produto com fundo brilhante para destaque
+        // Desenha o produto
         ctx.save();
         ctx.translate(p.x + CONFIG.tamanhoProduto / 2, p.y + CONFIG.tamanhoProduto / 2);
         ctx.rotate(p.rotacao);
 
-        // Brilho circular atrás do produto (glow)
-        const raioGlow = CONFIG.tamanhoProduto * 0.55;
-        const glowCor = p.pontos < 0 ? 'rgba(255,50,50,0.35)' : 'rgba(255,221,0,0.3)';
-        const glow = ctx.createRadialGradient(0, 0, raioGlow * 0.2, 0, 0, raioGlow);
-        glow.addColorStop(0, p.pontos < 0 ? 'rgba(255,60,60,0.5)' : 'rgba(255,255,255,0.5)');
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(0, 0, raioGlow, 0, Math.PI * 2);
-        ctx.fill();
+        const tam = CONFIG.tamanhoProduto;
 
-        // Fundo sólido arredondado (badge)
-        const badgeR = CONFIG.tamanhoProduto * 0.45;
-        ctx.fillStyle = p.pontos < 0 ? 'rgba(80,0,0,0.6)' : 'rgba(255,255,255,0.15)';
-        ctx.beginPath();
-        ctx.arc(0, 0, badgeR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = p.pontos < 0 ? 'rgba(255,80,80,0.6)' : 'rgba(255,221,0,0.5)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        if (p.img && imagensCarregadas[p.img] && imagensCarregadas[p.img].complete) {
+          // === PRODUTO COM IMAGEM ===
+          // Brilho dourado atrás da imagem
+          const glow = ctx.createRadialGradient(0, 0, tam * 0.15, 0, 0, tam * 0.6);
+          glow.addColorStop(0, 'rgba(255,255,255,0.4)');
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(0, 0, tam * 0.6, 0, Math.PI * 2);
+          ctx.fill();
 
-        // Emoji do produto (maior e com sombra)
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 6;
-        ctx.font = `${CONFIG.tamanhoProduto}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(p.emoji, 0, 2);
-        ctx.shadowColor = 'transparent';
+          // Sombra na imagem
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetY = 3;
+
+          // Desenha a imagem do produto centralizada
+          ctx.drawImage(imagensCarregadas[p.img], -tam / 2, -tam / 2, tam, tam);
+          ctx.shadowColor = 'transparent';
+
+        } else if (p.pontos < 0) {
+          // === BOMBA ROXA ===
+          // Brilho roxo atrás da bomba
+          const glowBomba = ctx.createRadialGradient(0, 0, tam * 0.1, 0, 0, tam * 0.6);
+          glowBomba.addColorStop(0, 'rgba(160,50,255,0.5)');
+          glowBomba.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glowBomba;
+          ctx.beginPath();
+          ctx.arc(0, 0, tam * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Corpo da bomba (círculo roxo)
+          const gradBomba = ctx.createRadialGradient(-4, -4, 2, 0, 0, tam * 0.35);
+          gradBomba.addColorStop(0, '#c77dff');
+          gradBomba.addColorStop(0.6, '#7b2ff7');
+          gradBomba.addColorStop(1, '#3c096c');
+          ctx.fillStyle = gradBomba;
+          ctx.beginPath();
+          ctx.arc(0, 2, tam * 0.33, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Borda da bomba
+          ctx.strokeStyle = '#e0aaff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Pavio da bomba
+          ctx.beginPath();
+          ctx.moveTo(0, -tam * 0.3);
+          ctx.quadraticCurveTo(8, -tam * 0.45, 3, -tam * 0.5);
+          ctx.strokeStyle = '#aaa';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+
+          // Faísca do pavio (pisca)
+          const brilho = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(255,200,50,${0.5 + brilho * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(3, -tam * 0.5, 4 + brilho * 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // "X" no centro da bomba
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${tam * 0.3}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✕', 0, 3);
+
+        } else {
+          // === FALLBACK (se imagem não carregou) ===
+          ctx.fillStyle = 'rgba(255,255,255,0.2)';
+          ctx.beginPath();
+          ctx.arc(0, 0, tam * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${tam * 0.35}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.nome.charAt(0), 0, 0);
+        }
 
         ctx.restore();
       }
