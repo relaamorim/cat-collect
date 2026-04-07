@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Cat Collect - Yoki</title>
+  <title>Yoki Shop</title>
   <style>
     /* Reset e configurações globais */
     * {
@@ -62,9 +62,12 @@
     }
 
     /* Logo e título */
-    .start-logo {
-      font-size: 72px;
-      margin-bottom: 8px;
+    /* Logo Yoki na tela inicial */
+    .start-yoki-logo {
+      width: 180px;
+      height: auto;
+      margin-bottom: 14px;
+      filter: drop-shadow(0 4px 15px rgba(0,0,0,0.4));
       animation: bounce 1.5s ease infinite;
     }
 
@@ -297,8 +300,8 @@
     <div class="floating-product">🫘</div>
     <div class="floating-product">🧂</div>
 
-    <div class="start-logo">🐱</div>
-    <div class="start-title">CAT COLLECT</div>
+    <img src="logo.png" alt="Yoki" class="start-yoki-logo">
+    <div class="start-title">YOKI SHOP</div>
     <div class="start-subtitle">Colete os produtos Yoki!</div>
     <div class="start-bag">🛍️</div>
     <button class="start-btn" id="btn-start">JOGAR</button>
@@ -345,13 +348,13 @@
     // ============================================
     const CONFIG = {
       duracao: 30,             // Duração da partida em segundos
-      intervaloSpawn: 600,     // Intervalo entre produtos (ms) - começa mais devagar
-      intervaloMinimo: 300,    // Intervalo mínimo (fica mais rápido com o tempo)
-      velocidadeBase: 3,       // Velocidade inicial dos produtos caindo
-      velocidadeMax: 7,        // Velocidade máxima
-      larguraSacola: 100,      // Largura da sacola em pixels
-      alturaSacola: 78,        // Altura da sacola
-      tamanhoProduto: 60,      // Tamanho dos produtos (emoji)
+      intervaloSpawn: 700,     // Intervalo entre produtos (ms) - começa mais devagar
+      intervaloMinimo: 380,    // Intervalo mínimo (fica mais rápido com o tempo)
+      velocidadeBase: 2,       // Velocidade inicial dos produtos caindo (mais lento)
+      velocidadeMax: 4.5,      // Velocidade máxima (mais lento)
+      larguraSacola: 110,      // Largura da sacola em pixels
+      alturaSacola: 85,        // Altura da sacola
+      tamanhoProduto: 80,      // Tamanho dos produtos (maior)
     };
 
     // Produtos Yoki que caem na tela (imagem + nome + pontos)
