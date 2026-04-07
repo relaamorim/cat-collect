@@ -349,9 +349,9 @@
       intervaloMinimo: 300,    // Intervalo mínimo (fica mais rápido com o tempo)
       velocidadeBase: 3,       // Velocidade inicial dos produtos caindo
       velocidadeMax: 7,        // Velocidade máxima
-      larguraSacola: 90,       // Largura da sacola em pixels
-      alturaSacola: 70,        // Altura da sacola
-      tamanhoProduto: 44,      // Tamanho dos produtos (emoji)
+      larguraSacola: 100,      // Largura da sacola em pixels
+      alturaSacola: 78,        // Altura da sacola
+      tamanhoProduto: 60,      // Tamanho dos produtos (emoji)
     };
 
     // Produtos Yoki que caem na tela (emoji + nome + pontos)
@@ -714,14 +714,41 @@
           continue;
         }
 
-        // Desenha o produto (emoji)
+        // Desenha o produto com fundo brilhante para destaque
         ctx.save();
         ctx.translate(p.x + CONFIG.tamanhoProduto / 2, p.y + CONFIG.tamanhoProduto / 2);
         ctx.rotate(p.rotacao);
+
+        // Brilho circular atrás do produto (glow)
+        const raioGlow = CONFIG.tamanhoProduto * 0.55;
+        const glowCor = p.pontos < 0 ? 'rgba(255,50,50,0.35)' : 'rgba(255,221,0,0.3)';
+        const glow = ctx.createRadialGradient(0, 0, raioGlow * 0.2, 0, 0, raioGlow);
+        glow.addColorStop(0, p.pontos < 0 ? 'rgba(255,60,60,0.5)' : 'rgba(255,255,255,0.5)');
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, raioGlow, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fundo sólido arredondado (badge)
+        const badgeR = CONFIG.tamanhoProduto * 0.45;
+        ctx.fillStyle = p.pontos < 0 ? 'rgba(80,0,0,0.6)' : 'rgba(255,255,255,0.15)';
+        ctx.beginPath();
+        ctx.arc(0, 0, badgeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = p.pontos < 0 ? 'rgba(255,80,80,0.6)' : 'rgba(255,221,0,0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Emoji do produto (maior e com sombra)
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 6;
         ctx.font = `${CONFIG.tamanhoProduto}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(p.emoji, 0, 0);
+        ctx.fillText(p.emoji, 0, 2);
+        ctx.shadowColor = 'transparent';
+
         ctx.restore();
       }
 
