@@ -843,6 +843,97 @@
     }
 
     // ============================================
+    // SONS DO JOGO (Web Audio API - sem arquivos)
+    // ============================================
+    let audioCtx = null;
+
+    // Inicializa o áudio no primeiro toque (exigido pelo mobile)
+    function garantirAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Som "plin" ao coletar produto (nota aguda e alegre)
+    function somColetar() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.06);
+      osc.frequency.setValueAtTime(1760, audioCtx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    // Som de explosão ao coletar bomba
+    function somBomba() {
+      if (!audioCtx) return;
+      // Ruído de explosão
+      const bufferSize = audioCtx.sampleRate * 0.3;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const dados = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        dados[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+      // Filtro grave para soar mais pesado
+      const filtro = audioCtx.createBiquadFilter();
+      filtro.type = 'lowpass';
+      filtro.frequency.setValueAtTime(600, audioCtx.currentTime);
+
+      noise.connect(filtro);
+      filtro.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start();
+    }
+
+    // ============================================
+    // FRASES MOTIVACIONAIS (a cada 5 pontos)
+    // ============================================
+    const FRASES = [
+      'Fantástico! 🔥',
+      'Você é muito bom! 💪',
+      'Você ama a Yoki! ❤️',
+      'Incrível! 🌟',
+      'Arrasou demais! 🎯',
+      'Monstro da coleta! 👑',
+      'Imparável! 🚀',
+    ];
+
+    let ultimoMarcoFrase = 0; // último marco de 5 pontos que disparou frase
+
+    // Cria frase grande animada no centro da tela
+    function criarFraseMotivacional() {
+      const frase = FRASES[Math.floor(Math.random() * FRASES.length)];
+      gameState.textosFlutuantes.push({
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        texto: frase,
+        cor: '#fff',
+        vida: 1.5,       // dura mais que os textos normais
+        grande: true,     // flag para renderizar maior
+      });
+    }
+
+    // ============================================
     // CONTROLES (TOQUE E MOUSE)
     // ============================================
 
@@ -1082,9 +1173,18 @@
           if (p.pontos > 0) {
             criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#ffdd00');
             criarTextoFlutuante(p.x, p.y, `+${p.pontos}`, '#ffdd00');
+            somColetar();
+
+            // Frase motivacional a cada 5 pontos
+            const marcoAtual = Math.floor(gameState.pontuacao / 5);
+            if (marcoAtual > ultimoMarcoFrase && gameState.pontuacao >= 5) {
+              ultimoMarcoFrase = marcoAtual;
+              criarFraseMotivacional();
+            }
           } else {
             criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#c77dff');
             criarTextoFlutuante(p.x, p.y, `${p.pontos}`, '#c77dff');
+            somBomba();
           }
 
           gameState.produtos.splice(i, 1);
@@ -1207,20 +1307,43 @@
       // Textos flutuantes
       for (let i = gameState.textosFlutuantes.length - 1; i >= 0; i--) {
         const tf = gameState.textosFlutuantes[i];
-        tf.y -= 2;
-        tf.vida -= 0.02;
+        tf.vida -= tf.grande ? 0.012 : 0.02;
+        tf.y -= tf.grande ? 1 : 2;
 
         if (tf.vida <= 0) {
           gameState.textosFlutuantes.splice(i, 1);
           continue;
         }
 
-        ctx.globalAlpha = tf.vida;
-        ctx.fillStyle = tf.cor;
-        ctx.font = 'bold 28px sans-serif';
+        ctx.save();
+        ctx.globalAlpha = Math.min(tf.vida, 1);
         ctx.textAlign = 'center';
-        ctx.fillText(tf.texto, tf.x + CONFIG.tamanhoProduto / 2, tf.y);
-        ctx.globalAlpha = 1;
+
+        if (tf.grande) {
+          // Frase motivacional grande no centro
+          const escala = 1 + Math.sin((1.5 - tf.vida) * 4) * 0.1;
+          ctx.translate(tf.x, tf.y);
+          ctx.scale(escala, escala);
+
+          // Sombra do texto
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.font = 'bold 32px sans-serif';
+          ctx.fillText(tf.texto, 2, 2);
+
+          // Texto principal (branco com borda amarela)
+          ctx.strokeStyle = '#ffdd00';
+          ctx.lineWidth = 3;
+          ctx.strokeText(tf.texto, 0, 0);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(tf.texto, 0, 0);
+        } else {
+          // Texto de pontos normal (+1, +2, -3)
+          ctx.fillStyle = tf.cor;
+          ctx.font = 'bold 28px sans-serif';
+          ctx.fillText(tf.texto, tf.x + CONFIG.tamanhoProduto / 2, tf.y);
+        }
+
+        ctx.restore();
       }
 
       // Sacola e HUD
@@ -1250,6 +1373,9 @@
         btnStart.textContent = 'JOGAR';
       }
 
+      // Inicializa o áudio (precisa de interação do usuário)
+      garantirAudio();
+
       // Esconde as telas
       startScreen.classList.add('hidden');
       endScreen.classList.remove('visible');
@@ -1257,6 +1383,7 @@
       // Reseta o estado
       gameState.rodando = true;
       gameState.pontuacao = 0;
+      ultimoMarcoFrase = 0;
       gameState.tempoRestante = CONFIG.duracao;
       gameState.produtos = [];
       gameState.particulas = [];
