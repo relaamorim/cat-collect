@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cat Collect - Yoki</title>
+  <style>
+    /* Reset e configurações globais */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      overflow: hidden;
+      touch-action: none;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a0a2e;
+    }
+
+    /* Container principal do jogo */
+    #game-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a0a2e 0%, #2d1b69 50%, #1a0a2e 100%);
+    }
+
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+
+    /* ===== TELA INICIAL ===== */
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #ff6b00 0%, #e60012 40%, #c4000f 100%);
+      z-index: 10;
+      transition: opacity 0.5s ease;
+    }
+
+    #start-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Logo e título */
+    .start-logo {
+      font-size: 72px;
+      margin-bottom: 8px;
+      animation: bounce 1.5s ease infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .start-title {
+      font-size: 42px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .start-subtitle {
+      font-size: 18px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 40px;
+      font-weight: 500;
+    }
+
+    /* Sacola animada na tela inicial */
+    .start-bag {
+      font-size: 80px;
+      margin-bottom: 30px;
+      animation: sway 2s ease-in-out infinite;
+    }
+
+    @keyframes sway {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+    }
+
+    /* Botão de iniciar */
+    .start-btn {
+      padding: 18px 60px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #e60012;
+      background: #fff;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      letter-spacing: 1px;
+    }
+
+    .start-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .start-instructions {
+      margin-top: 30px;
+      color: rgba(255,255,255,0.8);
+      font-size: 15px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* Produtos flutuantes na tela inicial (decoração) */
+    .floating-product {
+      position: absolute;
+      font-size: 36px;
+      animation: float 4s ease-in-out infinite;
+      opacity: 0.6;
+    }
+
+    .floating-product:nth-child(1) { top: 8%; left: 10%; animation-delay: 0s; }
+    .floating-product:nth-child(2) { top: 12%; right: 12%; animation-delay: 1s; }
+    .floating-product:nth-child(3) { top: 75%; left: 8%; animation-delay: 0.5s; }
+    .floating-product:nth-child(4) { top: 78%; right: 10%; animation-delay: 1.5s; }
+    .floating-product:nth-child(5) { top: 40%; left: 5%; animation-delay: 2s; }
+    .floating-product:nth-child(6) { top: 45%; right: 6%; animation-delay: 0.8s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-10px) rotate(5deg); }
+      75% { transform: translateY(10px) rotate(-5deg); }
+    }
+
+    /* ===== TELA FINAL (END CARD) ===== */
+    #end-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #1a0a2e 0%, #2d1b69 50%, #e60012 100%);
+      z-index: 20;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    #end-screen.visible {
+      display: flex;
+    }
+
+    .end-emoji {
+      font-size: 64px;
+      margin-bottom: 10px;
+      animation: bounce 1.5s ease infinite;
+    }
+
+    .end-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffdd00;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+      margin-bottom: 5px;
+    }
+
+    .end-score {
+      font-size: 52px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .end-score-label {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 25px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Card de Wi-Fi */
+    .wifi-card {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 24px 28px;
+      width: 90%;
+      max-width: 340px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-bottom: 25px;
+    }
+
+    .wifi-icon {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    .wifi-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffdd00;
+      margin-bottom: 12px;
+    }
+
+    .wifi-step {
+      color: rgba(255,255,255,0.9);
+      font-size: 15px;
+      line-height: 1.8;
+      text-align: left;
+    }
+
+    .wifi-step strong {
+      color: #ffdd00;
+    }
+
+    .wifi-credentials {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+
+    .wifi-credentials p {
+      color: #fff;
+      font-size: 16px;
+      margin: 6px 0;
+      font-weight: 600;
+    }
+
+    .wifi-credentials span {
+      color: #ffdd00;
+      font-family: monospace;
+      font-size: 18px;
+    }
+
+    /* Botão de jogar novamente */
+    .retry-btn {
+      padding: 16px 50px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a0a2e;
+      background: #ffdd00;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255,221,0,0.4);
+      transition: transform 0.2s ease;
+      letter-spacing: 1px;
+    }
+
+    .retry-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Marca Yoki no rodapé */
+    .brand-footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== TELA INICIAL ===== -->
+  <div id="start-screen">
+    <!-- Produtos flutuantes decorativos -->
+    <div class="floating-product">🍿</div>
+    <div class="floating-product">🌽</div>
+    <div class="floating-product">🥜</div>
+    <div class="floating-product">🍜</div>
+    <div class="floating-product">🫘</div>
+    <div class="floating-product">🧂</div>
+
+    <div class="start-logo">🐱</div>
+    <div class="start-title">CAT COLLECT</div>
+    <div class="start-subtitle">Colete os produtos Yoki!</div>
+    <div class="start-bag">🛍️</div>
+    <button class="start-btn" id="btn-start">JOGAR</button>
+    <div class="start-instructions">
+      Arraste o dedo para mover a sacola<br>
+      e colete o máximo de produtos!
+    </div>
+  </div>
+
+  <!-- ===== ÁREA DO JOGO (Canvas) ===== -->
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <!-- ===== TELA FINAL (END CARD) ===== -->
+  <div id="end-screen">
+    <div class="end-emoji">🎉</div>
+    <div class="end-title">Parabéns!</div>
+    <div class="end-score" id="final-score">0</div>
+    <div class="end-score-label">Produtos coletados</div>
+
+    <!-- Card com instruções de Wi-Fi -->
+    <div class="wifi-card">
+      <div class="wifi-icon">📶</div>
+      <div class="wifi-title">Conecte-se ao Wi-Fi da Feira!</div>
+      <div class="wifi-step">
+        <strong>1.</strong> Abra as configurações de Wi-Fi<br>
+        <strong>2.</strong> Selecione a rede abaixo<br>
+        <strong>3.</strong> Digite a senha e aproveite!
+      </div>
+      <div class="wifi-credentials">
+        <p>Rede: <span>FEIRA_YOKI_2026</span></p>
+        <p>Senha: <span>yoki2026</span></p>
+      </div>
+    </div>
+
+    <button class="retry-btn" id="btn-retry">JOGAR NOVAMENTE</button>
+    <div class="brand-footer">Yoki</div>
+  </div>
+
+  <script>
+    // ============================================
+    // CONFIGURAÇÕES DO JOGO
+    // ============================================
+    const CONFIG = {
+      duracao: 30,             // Duração da partida em segundos
+      intervaloSpawn: 600,     // Intervalo entre produtos (ms) - começa mais devagar
+      intervaloMinimo: 300,    // Intervalo mínimo (fica mais rápido com o tempo)
+      velocidadeBase: 3,       // Velocidade inicial dos produtos caindo
+      velocidadeMax: 7,        // Velocidade máxima
+      larguraSacola: 90,       // Largura da sacola em pixels
+      alturaSacola: 70,        // Altura da sacola
+      tamanhoProduto: 44,      // Tamanho dos produtos (emoji)
+    };
+
+    // Produtos Yoki que caem na tela (emoji + nome + pontos)
+    const PRODUTOS = [
+      { emoji: '🍿', nome: 'Pipoca', pontos: 1 },
+      { emoji: '🌽', nome: 'Milho', pontos: 1 },
+      { emoji: '🥜', nome: 'Amendoim', pontos: 2 },
+      { emoji: '🍜', nome: 'Macarrão', pontos: 1 },
+      { emoji: '🫘', nome: 'Feijão', pontos: 2 },
+      { emoji: '🧂', nome: 'Tempero', pontos: 3 },
+      { emoji: '🥣', nome: 'Sopa', pontos: 2 },
+      { emoji: '🫓', nome: 'Farofa', pontos: 3 },
+    ];
+
+    // Item ruim que tira pontos (bomba)
+    const ITEM_RUIM = { emoji: '💣', nome: 'Bomba', pontos: -3 };
+
+    // ============================================
+    // ELEMENTOS DO DOM
+    // ============================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('start-screen');
+    const endScreen = document.getElementById('end-screen');
+    const finalScoreEl = document.getElementById('final-score');
+    const btnStart = document.getElementById('btn-start');
+    const btnRetry = document.getElementById('btn-retry');
+
+    // ============================================
+    // ESTADO DO JOGO
+    // ============================================
+    let gameState = {
+      rodando: false,
+      pontuacao: 0,
+      tempoRestante: CONFIG.duracao,
+      sacola: { x: 0, y: 0 },
+      produtos: [],             // Lista de produtos caindo
+      particulas: [],           // Efeitos visuais de coleta
+      textosFlutuantes: [],     // Textos de +pontos que sobem
+      ultimoSpawn: 0,
+      animFrameId: null,
+      timerInterval: null,
+      toqueAtivo: false,
+    };
+
+    // ============================================
+    // AJUSTE DO CANVAS AO TAMANHO DA TELA
+    // ============================================
+    function ajustarCanvas() {
+      // Usa a tela inteira
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Reposiciona a sacola no centro inferior
+      gameState.sacola.x = canvas.width / 2 - CONFIG.larguraSacola / 2;
+      gameState.sacola.y = canvas.height - CONFIG.alturaSacola - 30;
+    }
+
+    window.addEventListener('resize', ajustarCanvas);
+    ajustarCanvas();
+
+    // ============================================
+    // CONTROLES (TOQUE E MOUSE)
+    // ============================================
+
+    // Mover a sacola para onde o jogador toca/arrasta
+    function moverSacola(x) {
+      // Centraliza a sacola na posição do toque
+      gameState.sacola.x = x - CONFIG.larguraSacola / 2;
+      // Limita dentro da tela
+      if (gameState.sacola.x < 0) gameState.sacola.x = 0;
+      if (gameState.sacola.x > canvas.width - CONFIG.larguraSacola) {
+        gameState.sacola.x = canvas.width - CONFIG.larguraSacola;
+      }
+    }
+
+    // Eventos de toque (mobile)
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      gameState.toqueAtivo = true;
+      moverSacola(e.touches[0].clientX);
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (gameState.toqueAtivo) {
+        moverSacola(e.touches[0].clientX);
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+      gameState.toqueAtivo = false;
+    });
+
+    // Eventos de mouse (desktop, para testes)
+    canvas.addEventListener('mousemove', (e) => {
+      if (gameState.rodando) {
+        moverSacola(e.clientX);
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (gameState.rodando) {
+        moverSacola(e.clientX);
+      }
+    });
+
+    // ============================================
+    // GERAR PRODUTOS CAINDO
+    // ============================================
+    function gerarProduto(agora) {
+      // Calcula progresso (0 a 1) para aumentar dificuldade
+      const progresso = 1 - (gameState.tempoRestante / CONFIG.duracao);
+
+      // Intervalo diminui com o tempo (mais produtos caem)
+      const intervaloAtual = CONFIG.intervaloSpawn -
+        (CONFIG.intervaloSpawn - CONFIG.intervaloMinimo) * progresso;
+
+      if (agora - gameState.ultimoSpawn < intervaloAtual) return;
+      gameState.ultimoSpawn = agora;
+
+      // 15% de chance de ser um item ruim (bomba)
+      const ehRuim = Math.random() < 0.15;
+      const produto = ehRuim ? ITEM_RUIM : PRODUTOS[Math.floor(Math.random() * PRODUTOS.length)];
+
+      // Velocidade aumenta com o tempo
+      const velocidade = CONFIG.velocidadeBase +
+        (CONFIG.velocidadeMax - CONFIG.velocidadeBase) * progresso +
+        Math.random() * 1.5;
+
+      gameState.produtos.push({
+        x: Math.random() * (canvas.width - CONFIG.tamanhoProduto),
+        y: -CONFIG.tamanhoProduto,
+        velocidade,
+        ...produto,
+        rotacao: 0,
+        velocidadeRotacao: (Math.random() - 0.5) * 0.05,
+      });
+    }
+
+    // ============================================
+    // EFEITOS VISUAIS
+    // ============================================
+
+    // Cria partículas coloridas ao coletar um produto
+    function criarParticulas(x, y, cor) {
+      for (let i = 0; i < 8; i++) {
+        gameState.particulas.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8 - 3,
+          tamanho: Math.random() * 6 + 3,
+          cor,
+          vida: 1,    // 1 = vivo, 0 = morto
+        });
+      }
+    }
+
+    // Cria texto flutuante de pontos (+1, +2, etc.)
+    function criarTextoFlutuante(x, y, texto, cor) {
+      gameState.textosFlutuantes.push({
+        x, y,
+        texto,
+        cor,
+        vida: 1,
+      });
+    }
+
+    // ============================================
+    // DETECTAR COLISÃO (sacola x produto)
+    // ============================================
+    function detectarColisao(produto) {
+      const sx = gameState.sacola.x;
+      const sy = gameState.sacola.y;
+      const sw = CONFIG.larguraSacola;
+      const sh = CONFIG.alturaSacola;
+      const px = produto.x;
+      const py = produto.y;
+      const pt = CONFIG.tamanhoProduto;
+
+      // Verifica sobreposição dos retângulos
+      return (
+        px + pt > sx &&
+        px < sx + sw &&
+        py + pt > sy &&
+        py < sy + sh
+      );
+    }
+
+    // ============================================
+    // DESENHAR A SACOLA
+    // ============================================
+    function desenharSacola() {
+      const x = gameState.sacola.x;
+      const y = gameState.sacola.y;
+      const w = CONFIG.larguraSacola;
+      const h = CONFIG.alturaSacola;
+
+      ctx.save();
+
+      // Sombra
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetY = 5;
+
+      // Corpo da sacola (trapézio arredondado)
+      ctx.beginPath();
+      ctx.moveTo(x + 10, y);
+      ctx.lineTo(x + w - 10, y);
+      ctx.quadraticCurveTo(x + w + 5, y + h * 0.3, x + w - 5, y + h);
+      ctx.lineTo(x + 5, y + h);
+      ctx.quadraticCurveTo(x - 5, y + h * 0.3, x + 10, y);
+      ctx.closePath();
+
+      // Gradiente da sacola (vermelho Yoki)
+      const grad = ctx.createLinearGradient(x, y, x, y + h);
+      grad.addColorStop(0, '#ff3333');
+      grad.addColorStop(1, '#cc0000');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Borda da sacola
+      ctx.strokeStyle = '#990000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.shadowColor = 'transparent';
+
+      // Alças da sacola
+      ctx.beginPath();
+      ctx.moveTo(x + 22, y);
+      ctx.quadraticCurveTo(x + 22, y - 18, x + 35, y - 18);
+      ctx.quadraticCurveTo(x + 48, y - 18, x + 48, y);
+      ctx.strokeStyle = '#990000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + w - 22, y);
+      ctx.quadraticCurveTo(x + w - 22, y - 18, x + w - 35, y - 18);
+      ctx.quadraticCurveTo(x + w - 48, y - 18, x + w - 48, y);
+      ctx.stroke();
+
+      // Logo "Y" na sacola (representando Yoki)
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Y', x + w / 2, y + h / 2 + 4);
+
+      ctx.restore();
+    }
+
+    // ============================================
+    // DESENHAR INTERFACE (HUD)
+    // ============================================
+    function desenharHUD() {
+      // Fundo semi-transparente do HUD
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(0, 0, canvas.width, 60);
+
+      // Pontuação (esquerda)
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`⭐ ${gameState.pontuacao}`, 16, 32);
+
+      // Timer (direita)
+      const tempoColor = gameState.tempoRestante <= 10 ? '#ff4444' : '#fff';
+      ctx.fillStyle = tempoColor;
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`⏱️ ${gameState.tempoRestante}s`, canvas.width - 16, 32);
+
+      // Barra de progresso do tempo
+      const progresso = gameState.tempoRestante / CONFIG.duracao;
+      const barraW = canvas.width - 32;
+      const barraH = 5;
+      const barraY = 56;
+
+      // Fundo da barra
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillRect(16, barraY, barraW, barraH);
+
+      // Preenchimento da barra
+      const barraGrad = ctx.createLinearGradient(16, 0, 16 + barraW * progresso, 0);
+      barraGrad.addColorStop(0, '#ffdd00');
+      barraGrad.addColorStop(1, progresso < 0.3 ? '#ff4444' : '#ff6b00');
+      ctx.fillStyle = barraGrad;
+      ctx.fillRect(16, barraY, barraW * progresso, barraH);
+    }
+
+    // ============================================
+    // DESENHAR FUNDO DO JOGO
+    // ============================================
+    function desenharFundo() {
+      // Gradiente de fundo (roxo/azul escuro)
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#1a0a2e');
+      grad.addColorStop(0.5, '#2d1b69');
+      grad.addColorStop(1, '#1a0a2e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Estrelinhas decorativas no fundo
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      const tempo = Date.now() * 0.001;
+      for (let i = 0; i < 30; i++) {
+        const sx = (i * 137.5) % canvas.width;
+        const sy = (i * 97.3 + Math.sin(tempo + i) * 8) % canvas.height;
+        const tamanho = 1.5 + Math.sin(tempo * 2 + i) * 0.8;
+        ctx.beginPath();
+        ctx.arc(sx, sy, tamanho, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ============================================
+    // LOOP PRINCIPAL DO JOGO
+    // ============================================
+    function loopJogo(timestamp) {
+      if (!gameState.rodando) return;
+
+      // Limpa a tela
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Desenha o fundo
+      desenharFundo();
+
+      // Gera novos produtos
+      gerarProduto(timestamp);
+
+      // Atualiza e desenha produtos
+      for (let i = gameState.produtos.length - 1; i >= 0; i--) {
+        const p = gameState.produtos[i];
+        p.y += p.velocidade;
+        p.rotacao += p.velocidadeRotacao;
+
+        // Verifica colisão com a sacola
+        if (detectarColisao(p)) {
+          gameState.pontuacao += p.pontos;
+          if (gameState.pontuacao < 0) gameState.pontuacao = 0;
+
+          // Efeitos visuais
+          if (p.pontos > 0) {
+            criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#ffdd00');
+            criarTextoFlutuante(p.x, p.y, `+${p.pontos}`, '#ffdd00');
+          } else {
+            criarParticulas(p.x + CONFIG.tamanhoProduto / 2, p.y, '#ff4444');
+            criarTextoFlutuante(p.x, p.y, `${p.pontos}`, '#ff4444');
+          }
+
+          gameState.produtos.splice(i, 1);
+          continue;
+        }
+
+        // Remove se saiu da tela
+        if (p.y > canvas.height + CONFIG.tamanhoProduto) {
+          gameState.produtos.splice(i, 1);
+          continue;
+        }
+
+        // Desenha o produto (emoji)
+        ctx.save();
+        ctx.translate(p.x + CONFIG.tamanhoProduto / 2, p.y + CONFIG.tamanhoProduto / 2);
+        ctx.rotate(p.rotacao);
+        ctx.font = `${CONFIG.tamanhoProduto}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.emoji, 0, 0);
+        ctx.restore();
+      }
+
+      // Atualiza e desenha partículas
+      for (let i = gameState.particulas.length - 1; i >= 0; i--) {
+        const part = gameState.particulas[i];
+        part.x += part.vx;
+        part.y += part.vy;
+        part.vy += 0.2; // gravidade
+        part.vida -= 0.03;
+
+        if (part.vida <= 0) {
+          gameState.particulas.splice(i, 1);
+          continue;
+        }
+
+        ctx.globalAlpha = part.vida;
+        ctx.fillStyle = part.cor;
+        ctx.beginPath();
+        ctx.arc(part.x, part.y, part.tamanho * part.vida, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Atualiza e desenha textos flutuantes
+      for (let i = gameState.textosFlutuantes.length - 1; i >= 0; i--) {
+        const tf = gameState.textosFlutuantes[i];
+        tf.y -= 2;
+        tf.vida -= 0.02;
+
+        if (tf.vida <= 0) {
+          gameState.textosFlutuantes.splice(i, 1);
+          continue;
+        }
+
+        ctx.globalAlpha = tf.vida;
+        ctx.fillStyle = tf.cor;
+        ctx.font = 'bold 28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(tf.texto, tf.x + CONFIG.tamanhoProduto / 2, tf.y);
+        ctx.globalAlpha = 1;
+      }
+
+      // Desenha a sacola
+      desenharSacola();
+
+      // Desenha o HUD (pontuação e timer)
+      desenharHUD();
+
+      // Próximo frame
+      gameState.animFrameId = requestAnimationFrame(loopJogo);
+    }
+
+    // ============================================
+    // INICIAR JOGO
+    // ============================================
+    function iniciarJogo() {
+      // Esconde tela inicial
+      startScreen.classList.add('hidden');
+      endScreen.classList.remove('visible');
+
+      // Reseta o estado
+      gameState.rodando = true;
+      gameState.pontuacao = 0;
+      gameState.tempoRestante = CONFIG.duracao;
+      gameState.produtos = [];
+      gameState.particulas = [];
+      gameState.textosFlutuantes = [];
+      gameState.ultimoSpawn = 0;
+
+      // Ajusta o canvas
+      ajustarCanvas();
+
+      // Inicia o timer (contagem regressiva)
+      gameState.timerInterval = setInterval(() => {
+        gameState.tempoRestante--;
+        if (gameState.tempoRestante <= 0) {
+          finalizarJogo();
+        }
+      }, 1000);
+
+      // Inicia o loop de renderização
+      gameState.animFrameId = requestAnimationFrame(loopJogo);
+    }
+
+    // ============================================
+    // FINALIZAR JOGO
+    // ============================================
+    function finalizarJogo() {
+      gameState.rodando = false;
+      clearInterval(gameState.timerInterval);
+      cancelAnimationFrame(gameState.animFrameId);
+
+      // Exibe a pontuação final
+      finalScoreEl.textContent = gameState.pontuacao;
+
+      // Mostra a tela final (end card)
+      endScreen.classList.add('visible');
+    }
+
+    // ============================================
+    // EVENTOS DOS BOTÕES
+    // ============================================
+    btnStart.addEventListener('click', iniciarJogo);
+    btnStart.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      iniciarJogo();
+    });
+
+    btnRetry.addEventListener('click', iniciarJogo);
+    btnRetry.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      iniciarJogo();
+    });
+
+    // Previne scroll e zoom no mobile
+    document.addEventListener('touchmove', (e) => {
+      if (gameState.rodando) e.preventDefault();
+    }, { passive: false });
+  </script>
+</body>
+</html>
