@@ -534,7 +534,7 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9maW1iZWhwa21nZ2tvZ3lqdnF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTUwMDYsImV4cCI6MjA5MTE3MTAwNn0.VD6QDdImRQyH_bRqITkdF0TGXkeOPgjzCaqo2EhNaf0';
 
     // Inicializa o cliente Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Dados do jogador atual (preenchidos no formulário)
     let jogadorAtual = { id: null, nome: '', whatsapp: '', email: '' };
@@ -744,7 +744,7 @@
       };
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('jogadores')
           .insert([dados])
           .select('id')
@@ -771,7 +771,7 @@
       if (!jogadorAtual.id) return;
 
       try {
-        await supabase
+        await db
           .from('jogadores')
           .update({ pontuacao: pontos })
           .eq('id', jogadorAtual.id);
@@ -787,7 +787,7 @@
       rankingList.innerHTML = '<li class="ranking-loading">Carregando ranking...</li>';
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('jogadores')
           .select('nome, pontuacao')
           .order('pontuacao', { ascending: false })
